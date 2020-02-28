@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2
 
 import sys, urllib3, base64, re, argparse, json
 
@@ -42,7 +42,7 @@ def main():
             message = "CRITICAL: "
         else:
             message = "WARNING: "
-    message = message + "Pi-hole is " + url_output["status"] + ": queries today - " + str(url_output["dns_queries_all_types"]) + ", domains blocked: " + str(url_output["ads_blocked_today"]) + ", percentage blocked: " + str(url_output["ads_percentage_today"])
+    message = message + "Pi-hole is " + url_output["status"] + ": queries today - " + str(url_output["dns_queries_all_types"]) + ", domains blocked: " + str(url_output["ads_blocked_today"]) + ", percentage blocked: " + str(url_output["ads_percentage_today"]) + "|queries=" + str(url_output["dns_queries_all_types"]) +" blocked=" +  str(url_output["ads_blocked_today"])
     gtfo(exitcode, message)
 
 if __name__ == '__main__':
