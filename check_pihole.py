@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 import sys, urllib3, base64, re, argparse, json
 
@@ -27,8 +27,8 @@ def check_pihole(host, _timeout):
     status_url = 'http://' + host + '/admin/api.php?summaryRaw'
     try:
         request = urllib3.PoolManager()
-        content  = request.request('GET', status_url, timeout=_timeout)
-        decoded  = json.loads(content.data)
+        content = request.request('GET', status_url, timeout=_timeout)
+        decoded = json.loads(content.data.decode('utf8'))
         return 0, decoded
     except Exception:
         return 2, "Problems with accessing API: Check if server is running."
