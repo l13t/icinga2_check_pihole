@@ -27,8 +27,8 @@ def check_pihole(host, _timeout):
     status_url = 'http://' + host + '/admin/api.php?summaryRaw'
     try:
         request = urllib3.PoolManager()
-        content  = request.request('GET', status_url, timeout=_timeout)
-        decoded  = json.loads(content.data)
+        content = request.request('GET', status_url, timeout=_timeout)
+        decoded = json.loads(content.data.decode('utf8'))
         return 0, decoded
     except Exception:
         return 2, "Problems with accessing API: Check if server is running."
@@ -42,7 +42,7 @@ def main():
             message = "CRITICAL: "
         else:
             message = "WARNING: "
-    message = message + "Pi-hole is " + url_output["status"] + ": queries today - " + str(url_output["dns_queries_all_types"]) + ", domains blocked: " + str(url_output["ads_blocked_today"]) + ", percentage blocked: " + str(url_output["ads_percentage_today"])
+    message = message + "Pi-hole is " + url_output["status"] + ": queries today - " + str(url_output["dns_queries_all_types"]) + ", domains blocked: " + str(url_output["ads_blocked_today"]) + ", percentage blocked: " + str(url_output["ads_percentage_today"]) + "|queries=" + str(url_output["dns_queries_all_types"]) +" blocked=" +  str(url_output["ads_blocked_today"])
     gtfo(exitcode, message)
 
 if __name__ == '__main__':
