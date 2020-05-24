@@ -6,7 +6,14 @@ import json
 import urllib3
 
 __author__ = 'Dmytro Prokhorenkov'
-__version__ = '0.2.0'
+__version__ = '0.2.1'
+
+EXIT_STATUS = {
+    0: "OK",
+    1: "WARNING",
+    2: "CRITICAL",
+    3: "UNKNOWN"
+}
 
 
 def parse_args():
@@ -27,7 +34,7 @@ def parse_args():
 
 def gtfo(exitcode, message=''):
     if message:
-        print(message)
+        print(''.join([EXIT_STATUS[exitcode], ":", " ", message]))
     exit(exitcode)
 
 
@@ -45,16 +52,19 @@ def check_pihole(host, port, _timeout):
 def main():
     args = parse_args()
     exitcode, url_output = check_pihole(args.host, args.port, args.timeout)
-    message = "OK: "
-    if url_output["status"] != "enabled":
-        if args.pihole_status:
-            message = "CRITICAL: "
-        else:
-            message = "WARNING: "
-    message = message + "Pi-hole is " + url_output["status"] + ": queries today - " + \
-        str(url_output["dns_queries_all_types"]) + ", domains blocked: " + str(url_output["ads_blocked_today"]) + \
-        ", percentage blocked: " + str(url_output["ads_percentage_today"]) + \
-        "|queries=" + str(url_output["dns_queries_all_types"]) + " blocked=" + str(url_output["ads_blocked_today"])
+    message = ""
+    if exitcode == 2:
+        message = url_output
+    else:
+        if url_output["status"] != "enabled":
+            if args.pihole_status:
+                exitcode = 2
+            else:
+                exitcode = 1
+        message = message + "Pi-hole is " + url_output["status"] + ": queries today - " + \
+            str(url_output["dns_queries_all_types"]) + ", domains blocked: " + str(url_output["ads_blocked_today"]) + \
+            ", percentage blocked: " + str(url_output["ads_percentage_today"]) + \
+            "|queries=" + str(url_output["dns_queries_all_types"]) + " blocked=" + str(url_output["ads_blocked_today"])
     gtfo(exitcode, message)
 
 
