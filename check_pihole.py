@@ -58,9 +58,9 @@ def main():
     else:
         if url_output["status"] != "enabled":
             if args.pihole_status:
-                message = "CRITICAL: "
+                exitcode = 2
             else:
-                message = "WARNING: "
+                exitcode = 1
         message = message + "Pi-hole is " + url_output["status"] + ": queries today - " + \
             str(url_output["dns_queries_all_types"]) + ", domains blocked: " + str(url_output["ads_blocked_today"]) + \
             ", percentage blocked: " + str(url_output["ads_percentage_today"]) + \
