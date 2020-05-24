@@ -17,5 +17,5 @@ optional arguments:
   -t TIMEOUT, --timeout TIMEOUT
                         Timeout for request. Default 10 seconds
 
-check_pihole.py: v.0.2.0 by Dmytro Prokhorenkov
+check_pihole.py: v.0.2.1 by Dmytro Prokhorenkov
 ```
