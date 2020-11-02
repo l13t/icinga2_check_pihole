@@ -1,4 +1,6 @@
 # icinga2_check_pihole
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fl13t%2Ficinga2_check_pihole.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fl13t%2Ficinga2_check_pihole?ref=badge_shield)
+
 
 Icinga2/Nagios plugin to check Pi-hole status.
 
@@ -19,3 +21,7 @@ optional arguments:
 
 check_pihole.py: v.0.2.1 by Dmytro Prokhorenkov
 ```
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fl13t%2Ficinga2_check_pihole.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fl13t%2Ficinga2_check_pihole?ref=badge_large)
