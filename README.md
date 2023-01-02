@@ -10,6 +10,7 @@ Check Pi-hole status
 optional arguments:
   -h, --help            show this help message and exit
   -H HOST, --host HOST  Pi-hole ip address or hostname
+  -T TOKEN, --token TOKEN Pi-hole api token
   -P PORT, --port PORT  Port number for Pi-Hole web UI
   -C, --status_critical
                         Forces CRITICAL when Pi-hole is disabled
