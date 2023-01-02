@@ -52,7 +52,7 @@ def check_pihole(host, port, token, _timeout):
 
 def main():
     args = parse_args()
-    exitcode, url_output = check_pihole(args.host, args.port, args.timeout)
+    exitcode, url_output = check_pihole(args.host, args.port, args.token, args.timeout)
     message = ""
     if exitcode == 2:
         message = url_output
