@@ -39,7 +39,7 @@ def gtfo(exitcode, message=''):
     exit(exitcode)
 
 
-def check_pihole(host, port, _timeout):
+def check_pihole(host, port, token, _timeout):
     status_url = 'http://' + host + ('' if port == 80 else ":"+str(port)) + '/admin/api.php?summaryRaw&auth=' + token
     try:
         request = urllib3.PoolManager()
