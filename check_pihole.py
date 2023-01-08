@@ -56,6 +56,9 @@ def main():
     message = ""
     if exitcode == 2:
         message = url_output
+    if len(url_output) == 0:
+        exitcode = 3
+        message = "Empty result from Pihole. Wrong or no API token?"    
     else:
         if url_output["status"] != "enabled":
             if args.pihole_status:
