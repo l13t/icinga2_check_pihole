@@ -6,7 +6,7 @@ import json
 import urllib3
 
 __author__ = 'Dmytro Prokhorenkov'
-__version__ = '0.2.1'
+__version__ = '0.2.2'
 
 EXIT_STATUS = {
     0: "OK",
@@ -21,6 +21,7 @@ def parse_args():
                                    description='Check Pi-hole status',
                                    epilog='{0}: v.{1} by {2}'.format('check_pihole.py', __version__, __author__))
     argp.add_argument('-H', '--host', type=str, help="Pi-hole ip address or hostname", required=True)
+    argp.add_argument('-T', '--token', type=str, help="Pi-hole api token", required=True)
     argp.add_argument('-P', '--port', type=int, help="Port number for Pi-Hole web UI", default=80)
     argp.add_argument('-C', '--status_critical', dest='pihole_status',
                       help="Forces CRITICAL when Pi-hole is disabled", action='store_true')
@@ -38,8 +39,8 @@ def gtfo(exitcode, message=''):
     exit(exitcode)
 
 
-def check_pihole(host, port, _timeout):
-    status_url = 'http://' + host + ('' if port == 80 else ":"+str(port)) + '/admin/api.php?summaryRaw'
+def check_pihole(host, port, token, _timeout):
+    status_url = 'http://' + host + ('' if port == 80 else ":"+str(port)) + '/admin/api.php?summaryRaw&auth=' + token
     try:
         request = urllib3.PoolManager()
         content = request.request('GET', status_url, timeout=_timeout)
@@ -51,10 +52,13 @@ def check_pihole(host, port, _timeout):
 
 def main():
     args = parse_args()
-    exitcode, url_output = check_pihole(args.host, args.port, args.timeout)
+    exitcode, url_output = check_pihole(args.host, args.port, args.token, args.timeout)
     message = ""
     if exitcode == 2:
         message = url_output
+    if len(url_output) == 0:
+        exitcode = 3
+        message = "Empty result from Pihole. Wrong or no API token?"    
     else:
         if url_output["status"] != "enabled":
             if args.pihole_status:
