@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3.7
 
 import argparse
 import json
@@ -60,15 +60,16 @@ def main():
     if exitcode == 2:
         message = url_output
     else:
-        if url_output["status"] != "enabled":
-            if args.pihole_status:
-                exitcode = 2
-            if len(url_output) == 0:
-                exitcode = 3
-                message = "Empty result from Pihole. Wrong or no API token?"  
-            else:
-                exitcode = 1
-        message = message + "Pi-hole is " + url_output["status"] + ": queries today - " + \
+        if len(url_output) == 0:
+            exitcode = 3
+            message = "Empty result from Pihole. Wrong API token?"
+        else:
+            if url_output["status"] != "enabled":
+                if args.pihole_status:
+                    exitcode = 2
+                else:
+                    exitcode = 1
+            message = message + "Pi-hole is " + url_output["status"] + ": queries today - " + \
             str(url_output["dns_queries_all_types"]) + ", domains blocked: " + str(url_output["ads_blocked_today"]) + \
             ", percentage blocked: " + str(url_output["ads_percentage_today"]) + \
             "|queries=" + str(url_output["dns_queries_all_types"]) + " blocked=" + str(url_output["ads_blocked_today"]) + " clients=" + str(url_output['unique_clients'])
