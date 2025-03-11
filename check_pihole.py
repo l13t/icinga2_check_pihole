@@ -4,9 +4,11 @@ import argparse
 import json
 
 import urllib3
+urllib3.disable_warnings()
 
 __author__ = 'Dmytro Prokhorenkov'
-__version__ = '0.2.2'
+__version__ = '0.3.0'
+
 
 EXIT_STATUS = {
     0: "OK",
@@ -23,6 +25,8 @@ def parse_args():
     argp.add_argument('-H', '--host', type=str, help="Pi-hole ip address or hostname", required=True)
     argp.add_argument('-T', '--token', type=str, help="Pi-hole api token", required=True)
     argp.add_argument('-P', '--port', type=int, help="Port number for Pi-Hole web UI", default=80)
+    argp.add_argument('-A', '--auth', type=str, help="API Auth Key", required=True)
+    argp.add_argument('-S', '--secure', help="Use ssl for connection", action='store_true')
     argp.add_argument('-C', '--status_critical', dest='pihole_status',
                       help="Forces CRITICAL when Pi-hole is disabled", action='store_true')
     argp.add_argument('-W', '--status_warning', dest='pihole_status',
@@ -39,10 +43,11 @@ def gtfo(exitcode, message=''):
     exit(exitcode)
 
 
-def check_pihole(host, port, token, _timeout):
-    status_url = 'http://' + host + ('' if port == 80 else ":"+str(port)) + '/admin/api.php?summaryRaw&auth=' + token
+def check_pihole(host, port, auth, secure, _timeout):
+    status_url = 'http' + ('s' if secure else '') + '://' + host + ('' if port == 80 else ":"+str(port)) + '/admin/api.php?summaryRaw&auth=' + auth
     try:
-        request = urllib3.PoolManager()
+        cert_reqs = 'CERT_NONE' if secure else ''
+        request = urllib3.PoolManager(cert_reqs=cert_reqs)
         content = request.request('GET', status_url, timeout=_timeout)
         decoded = json.loads(content.data.decode('utf8'))
         return 0, decoded
@@ -52,7 +57,7 @@ def check_pihole(host, port, token, _timeout):
 
 def main():
     args = parse_args()
-    exitcode, url_output = check_pihole(args.host, args.port, args.token, args.timeout)
+    exitcode, url_output = check_pihole(args.host, args.port, args.auth, args.secure, args.timeout)
     message = ""
     if exitcode == 2:
         message = url_output
@@ -60,15 +65,19 @@ def main():
         exitcode = 3
         message = "Empty result from Pihole. Wrong or no API token?"    
     else:
-        if url_output["status"] != "enabled":
-            if args.pihole_status:
-                exitcode = 2
-            else:
-                exitcode = 1
-        message = message + "Pi-hole is " + url_output["status"] + ": queries today - " + \
+        if len(url_output) == 0:
+            exitcode = 3
+            message = "Empty result from Pihole. Wrong API token?"
+        else:
+            if url_output["status"] != "enabled":
+                if args.pihole_status:
+                    exitcode = 2
+                else:
+                    exitcode = 1
+            message = message + "Pi-hole is " + url_output["status"] + ": queries today - " + \
             str(url_output["dns_queries_all_types"]) + ", domains blocked: " + str(url_output["ads_blocked_today"]) + \
             ", percentage blocked: " + str(url_output["ads_percentage_today"]) + \
-            "|queries=" + str(url_output["dns_queries_all_types"]) + " blocked=" + str(url_output["ads_blocked_today"])
+            "|queries=" + str(url_output["dns_queries_all_types"]) + " blocked=" + str(url_output["ads_blocked_today"]) + " clients=" + str(url_output['unique_clients'])
     gtfo(exitcode, message)
 
 
