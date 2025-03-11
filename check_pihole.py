@@ -9,6 +9,7 @@ urllib3.disable_warnings()
 __author__ = 'Dmytro Prokhorenkov'
 __version__ = '0.3.0'
 
+
 EXIT_STATUS = {
     0: "OK",
     1: "WARNING",
@@ -22,6 +23,7 @@ def parse_args():
                                    description='Check Pi-hole status',
                                    epilog='{0}: v.{1} by {2}'.format('check_pihole.py', __version__, __author__))
     argp.add_argument('-H', '--host', type=str, help="Pi-hole ip address or hostname", required=True)
+    argp.add_argument('-T', '--token', type=str, help="Pi-hole api token", required=True)
     argp.add_argument('-P', '--port', type=int, help="Port number for Pi-Hole web UI", default=80)
     argp.add_argument('-A', '--auth', type=str, help="API Auth Key", required=True)
     argp.add_argument('-S', '--secure', help="Use ssl for connection", action='store_true')
@@ -59,6 +61,9 @@ def main():
     message = ""
     if exitcode == 2:
         message = url_output
+    if len(url_output) == 0:
+        exitcode = 3
+        message = "Empty result from Pihole. Wrong or no API token?"    
     else:
         if len(url_output) == 0:
             exitcode = 3
