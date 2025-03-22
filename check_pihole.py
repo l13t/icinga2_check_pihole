@@ -30,7 +30,6 @@ def parse_args():
     argp.add_argument('-W', '--status_warning', dest='pihole_status',
                       help="Forces WARNING when Pi-hole is disabled", action='store_false')
     argp.add_argument('-t', '--timeout', default=10, type=int, help='Timeout for request. Default 10 seconds')
-    argp.set_defaults(pihole_status=False)
     args = argp.parse_args()
     return args
 
@@ -58,25 +57,22 @@ def main():
     args = parse_args()
     exitcode, url_output = check_pihole(args.host, args.port, args.auth, args.secure, args.timeout, 'dns/blocking')
     message = ""
-    if exitcode == 2:
-        message = url_output
-    else:
-        if "error" in url_output:
-            message = "Connection Failed: " + url_output["error"]["message"]
-        else:
-            if url_output["blocking"] != "enabled":
-                if args.pihole_status:
-                    exitcode = 2
-                else:
-                    exitcode = 1
-            exitcode, status_results = check_pihole(args.host, args.port, args.auth, args.secure, args.timeout, 'stats/summary')
-            if exitcode == 2:
-                message = status_results   
-            message = message + "Pi-hole is " + url_output["blocking"] + ": queries today - " + \
-            str(status_results["queries"]["total"]) + ", domains blocked: " + str(status_results["queries"]["blocked"]) + \
-            ", percentage blocked: " + str(status_results["queries"]["percent_blocked"]) + \
-            "|queries=" + str(status_results["queries"]["total"]) + " blocked=" + str(status_results["queries"]["blocked"]) + " clients=" + str(status_results["clients"]["total"])
     
+    # Error handling statments
+    if exitcode == 2: gtfo(2, url_output)
+    if "error" in url_output: gtfo(2, "Connection Failed: " + url_output["error"]["message"])
+    if url_output["blocking"] != "enabled": gtfo(1, "Pi-hole blocking is currently disabled")
+    
+    # Fetch Pi-hole Statistics
+    exitcode, status_results = check_pihole(args.host, args.port, args.auth, args.secure, args.timeout, 'stats/summary')
+    if exitcode == 2: gtfo(2, url_output)
+    
+    message = message + "Pi-hole is " + url_output["blocking"] + ": queries today - " + \
+    str(status_results["queries"]["total"]) + ", domains blocked: " + str(status_results["queries"]["blocked"]) + \
+    ", percentage blocked: " + str(status_results["queries"]["percent_blocked"]) + \
+    "|queries=" + str(status_results["queries"]["total"]) + " blocked=" + str(status_results["queries"]["blocked"]) + " clients=" + str(status_results["clients"]["total"])
+    
+    # Exit with results
     gtfo(exitcode, message)
 
 
