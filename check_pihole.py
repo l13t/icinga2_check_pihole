@@ -7,8 +7,7 @@ import urllib3
 urllib3.disable_warnings()
 
 __author__ = 'Dmytro Prokhorenkov'
-__version__ = '0.3.0'
-
+__version__ = '0.4.0'
 
 EXIT_STATUS = {
     0: "OK",
@@ -20,10 +19,9 @@ EXIT_STATUS = {
 
 def parse_args():
     argp = argparse.ArgumentParser(add_help=True,
-                                   description='Check Pi-hole status',
+                                   description='Check Pi-hole (v6) status',
                                    epilog='{0}: v.{1} by {2}'.format('check_pihole.py', __version__, __author__))
     argp.add_argument('-H', '--host', type=str, help="Pi-hole ip address or hostname", required=True)
-    argp.add_argument('-T', '--token', type=str, help="Pi-hole api token", required=True)
     argp.add_argument('-P', '--port', type=int, help="Port number for Pi-Hole web UI", default=80)
     argp.add_argument('-A', '--auth', type=str, help="API Auth Key", required=True)
     argp.add_argument('-S', '--secure', help="Use ssl for connection", action='store_true')
@@ -43,12 +41,13 @@ def gtfo(exitcode, message=''):
     exit(exitcode)
 
 
-def check_pihole(host, port, auth, secure, _timeout):
-    status_url = 'http' + ('s' if secure else '') + '://' + host + ('' if port == 80 else ":"+str(port)) + '/admin/api.php?summaryRaw&auth=' + auth
+def check_pihole(host, port, auth, secure, _timeout, api):
+    api_url = 'http' + ('s' if secure else '') + '://' + host + ('' if port == 80 else ":"+str(port)) + '/api/'
+    api_headers = {'accept': 'application/json', 'sid': auth}
     try:
         cert_reqs = 'CERT_NONE' if secure else ''
         request = urllib3.PoolManager(cert_reqs=cert_reqs)
-        content = request.request('GET', status_url, timeout=_timeout)
+        content = request.request('GET', api_url + api, headers=api_headers, timeout=_timeout)
         decoded = json.loads(content.data.decode('utf8'))
         return 0, decoded
     except Exception:
@@ -57,27 +56,27 @@ def check_pihole(host, port, auth, secure, _timeout):
 
 def main():
     args = parse_args()
-    exitcode, url_output = check_pihole(args.host, args.port, args.auth, args.secure, args.timeout)
+    exitcode, url_output = check_pihole(args.host, args.port, args.auth, args.secure, args.timeout, 'dns/blocking')
     message = ""
     if exitcode == 2:
         message = url_output
-    if len(url_output) == 0:
-        exitcode = 3
-        message = "Empty result from Pihole. Wrong or no API token?"    
     else:
-        if len(url_output) == 0:
-            exitcode = 3
-            message = "Empty result from Pihole. Wrong API token?"
+        if "error" in url_output:
+            message = "Connection Failed: " + url_output["error"]["message"]
         else:
-            if url_output["status"] != "enabled":
+            if url_output["blocking"] != "enabled":
                 if args.pihole_status:
                     exitcode = 2
                 else:
                     exitcode = 1
-            message = message + "Pi-hole is " + url_output["status"] + ": queries today - " + \
-            str(url_output["dns_queries_all_types"]) + ", domains blocked: " + str(url_output["ads_blocked_today"]) + \
-            ", percentage blocked: " + str(url_output["ads_percentage_today"]) + \
-            "|queries=" + str(url_output["dns_queries_all_types"]) + " blocked=" + str(url_output["ads_blocked_today"]) + " clients=" + str(url_output['unique_clients'])
+            exitcode, status_results = check_pihole(args.host, args.port, args.auth, args.secure, args.timeout, 'stats/summary')
+            if exitcode == 2:
+                message = status_results   
+            message = message + "Pi-hole is " + url_output["blocking"] + ": queries today - " + \
+            str(status_results["queries"]["total"]) + ", domains blocked: " + str(status_results["queries"]["blocked"]) + \
+            ", percentage blocked: " + str(status_results["queries"]["percent_blocked"]) + \
+            "|queries=" + str(status_results["queries"]["total"]) + " blocked=" + str(status_results["queries"]["blocked"]) + " clients=" + str(status_results["clients"]["total"])
+    
     gtfo(exitcode, message)
 
 
