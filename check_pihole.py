@@ -74,7 +74,8 @@ def main():
     message = message + "Pi-hole is " + url_output["blocking"] + ": queries today - " + \
         str(status_results["queries"]["total"]) + ", domains blocked: " + str(status_results["queries"]["blocked"]) + \
         ", percentage blocked: " + str(status_results["queries"]["percent_blocked"]) + \
-        "|queries=" + str(status_results["queries"]["total"]) + " blocked=" + str(status_results["queries"]["blocked"]) + " clients=" + str(status_results["clients"]["total"])
+        "|queries=" + str(status_results["queries"]["total"]) + " blocked=" + \
+        str(status_results["queries"]["blocked"]) + " clients=" + str(status_results["clients"]["total"])
 
     # Exit with results
     gtfo(exitcode, message)
