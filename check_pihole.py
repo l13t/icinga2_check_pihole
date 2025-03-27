@@ -7,7 +7,6 @@ import urllib3
 urllib3.disable_warnings()
 
 __author__ = 'Dmytro Prokhorenkov'
-__version__ = '0.4.0'
 
 EXIT_STATUS = {
     0: "OK",
@@ -19,8 +18,7 @@ EXIT_STATUS = {
 
 def parse_args():
     argp = argparse.ArgumentParser(add_help=True,
-                                   description='Check Pi-hole (version >=6.0.0) status',
-                                   epilog='{0}: v.{1} by {2}'.format('check_pihole.py', __version__, __author__))
+                                   description='Check Pi-hole (version >=6.0.0) status')
     argp.add_argument('-H', '--host', type=str, help="Pi-hole ip address or hostname", required=True)
     argp.add_argument('-P', '--port', type=int, help="Port number for Pi-Hole web UI", default=80)
     argp.add_argument('-A', '--auth', type=str, help="API Auth Key", required=True)
