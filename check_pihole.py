@@ -2,8 +2,8 @@
 
 import argparse
 import json
-
 import urllib3
+
 urllib3.disable_warnings()
 
 __author__ = 'Dmytro Prokhorenkov'
@@ -19,7 +19,7 @@ EXIT_STATUS = {
 
 def parse_args():
     argp = argparse.ArgumentParser(add_help=True,
-                                   description='Check Pi-hole (v6) status',
+                                   description='Check Pi-hole (version >=6.0.0) status',
                                    epilog='{0}: v.{1} by {2}'.format('check_pihole.py', __version__, __author__))
     argp.add_argument('-H', '--host', type=str, help="Pi-hole ip address or hostname", required=True)
     argp.add_argument('-P', '--port', type=int, help="Port number for Pi-Hole web UI", default=80)
@@ -57,21 +57,25 @@ def main():
     args = parse_args()
     exitcode, url_output = check_pihole(args.host, args.port, args.auth, args.secure, args.timeout, 'dns/blocking')
     message = ""
-    
+
     # Error handling statments
-    if exitcode == 2: gtfo(2, url_output)
-    if "error" in url_output: gtfo(2, "Connection Failed: " + url_output["error"]["message"])
-    if url_output["blocking"] != "enabled": gtfo(1, "Pi-hole blocking is currently disabled")
-    
+    if exitcode == 2:
+        gtfo(2, url_output)
+    if "error" in url_output:
+        gtfo(2, "Connection Failed: " + url_output["error"]["message"])
+    if url_output["blocking"] != "enabled":
+        gtfo(1, "Pi-hole blocking is currently disabled")
+
     # Fetch Pi-hole Statistics
     exitcode, status_results = check_pihole(args.host, args.port, args.auth, args.secure, args.timeout, 'stats/summary')
-    if exitcode == 2: gtfo(2, url_output)
-    
+    if exitcode == 2:
+        gtfo(2, url_output)
+
     message = message + "Pi-hole is " + url_output["blocking"] + ": queries today - " + \
-    str(status_results["queries"]["total"]) + ", domains blocked: " + str(status_results["queries"]["blocked"]) + \
-    ", percentage blocked: " + str(status_results["queries"]["percent_blocked"]) + \
-    "|queries=" + str(status_results["queries"]["total"]) + " blocked=" + str(status_results["queries"]["blocked"]) + " clients=" + str(status_results["clients"]["total"])
-    
+        str(status_results["queries"]["total"]) + ", domains blocked: " + str(status_results["queries"]["blocked"]) + \
+        ", percentage blocked: " + str(status_results["queries"]["percent_blocked"]) + \
+        "|queries=" + str(status_results["queries"]["total"]) + " blocked=" + str(status_results["queries"]["blocked"]) + " clients=" + str(status_results["clients"]["total"])
+
     # Exit with results
     gtfo(exitcode, message)
 
