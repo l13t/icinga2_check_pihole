@@ -40,9 +40,13 @@ def gtfo(exitcode, message=''):
 
 def check_pihole(host, port, auth, secure, _timeout, api):
     api_url = 'http' + ('s' if secure else '') + '://' + host + ('' if port == 80 else ":"+str(port)) + '/api/'
-    api_headers = {'accept': 'application/json', 'sid': auth}
+    cert_reqs = 'CERT_NONE' if secure else ''
+    request = urllib3.PoolManager(cert_reqs=cert_reqs)
+    content = request.request('POST', api_url + 'auth', body=json.dumps({"password": auth}), timeout=_timeout)
+    sid = json.loads(content.data.decode('utf8'))['session']['sid']
+
+    api_headers = {'accept': 'application/json', 'sid': sid}
     try:
-        cert_reqs = 'CERT_NONE' if secure else ''
         request = urllib3.PoolManager(cert_reqs=cert_reqs)
         content = request.request('GET', api_url + api, headers=api_headers, timeout=_timeout)
         decoded = json.loads(content.data.decode('utf8'))
