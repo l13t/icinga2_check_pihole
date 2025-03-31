@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.0](https://github.com/l13t/icinga2_check_pihole/compare/v0.4.1...v1.0.0) (2025-03-31)
+
+
+### ⚠ BREAKING CHANGES
+
+* Updated code with dedicated getting sid and logout functions so we're not hitting limit on connections
+to Pi-Hole API.
+* switched from urllib3 to requests library and removed json as obsolete
+
+### Features
+
+* Refactored code and changed libraries ([#14](https://github.com/l13t/icinga2_check_pihole/issues/14)) ([14adeca](https://github.com/l13t/icinga2_check_pihole/commit/14adeca99298d3cb85acf2d1b125e332b71aeff5))
+
 ## [0.4.1](https://github.com/l13t/icinga2_check_pihole/compare/v0.4.0...v0.4.1) (2025-03-31)
 
 
