@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.1](https://github.com/l13t/icinga2_check_pihole/compare/v0.4.0...v0.4.1) (2025-03-31)
+
+
+### Bug Fixes
+
+* Updated get sid process and extended error output ([#13](https://github.com/l13t/icinga2_check_pihole/issues/13)) ([79c6553](https://github.com/l13t/icinga2_check_pihole/commit/79c6553a3a48b78c5e525924a2f91de39d50fe39))
+
 ## [0.4.0](https://github.com/l13t/icinga2_check_pihole/compare/v0.3.0...v0.4.0) (2025-03-27)
 
 
