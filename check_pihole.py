@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
-import json
-import urllib3
-
-urllib3.disable_warnings()
+import requests
 
 __author__ = 'Dmytro Prokhorenkov'
 
@@ -23,10 +20,8 @@ def parse_args():
     argp.add_argument('-P', '--port', type=int, help="Port number for Pi-Hole web UI", default=80)
     argp.add_argument('-A', '--auth', type=str, help="API Auth Key", required=True)
     argp.add_argument('-S', '--secure', help="Use ssl for connection", action='store_true')
-    argp.add_argument('-C', '--status_critical', dest='pihole_status',
-                      help="Forces CRITICAL when Pi-hole is disabled", action='store_true')
-    argp.add_argument('-W', '--status_warning', dest='pihole_status',
-                      help="Forces WARNING when Pi-hole is disabled", action='store_false')
+    argp.add_argument('-C', '--critical', help="Forces CRITICAL when Pi-hole is disabled", action='store_true')
+    argp.add_argument('-n', '--no-stats', help="Disable stats in output", action='store_true')
     argp.add_argument('-t', '--timeout', default=10, type=int, help='Timeout for request. Default 10 seconds')
     args = argp.parse_args()
     return args
@@ -38,26 +33,46 @@ def gtfo(exitcode, message=''):
     exit(exitcode)
 
 
-def check_pihole(host, port, auth, secure, _timeout, api):
-    api_url = 'http' + ('s' if secure else '') + '://' + host + ('' if port == 80 else ":"+str(port)) + '/api/'
-    cert_reqs = 'CERT_NONE' if secure else ''
+def generate_url(host, port, secure):
+    return f"{'https' if secure else 'http'}://{host}:{port}/api"
+
+
+def pihole_get_sid(url, auth, secure, timeout) -> tuple[str, str]:
+    _url = '/'.join([url, 'auth'])
+    payload = {"password": auth}
     try:
-        request = urllib3.PoolManager(cert_reqs=cert_reqs)
-        content = request.request('POST', api_url + 'auth', body=json.dumps({"password": auth}), timeout=_timeout)
-        valid = json.loads(content.data.decode('utf8'))['session']['valid']
+        response = requests.request('POST', _url, json=payload, verify=False, timeout=timeout)
+        valid = response.json()['session']['valid']
         if not valid:
             return 2, "Problems with accessing API: Check if provided password is correct."
 
-        sid = json.loads(content.data.decode('utf8'))['session']['sid']
+        sid = response.json()['session']['sid']
+        return sid, ""
 
-    except Exception:
-        return 2, "Problems with accessing API: Check if server is running."
+    except Exception as e:
+        print(e)
+        return "", "Problems with accessing API: Check if server is running."
 
-    api_headers = {'accept': 'application/json', 'sid': sid}
+
+def pihole_logout(url, sid, secure, timeout) -> bool:
+    payload = {}
+    headers = {
+      "X-FTL-SID": sid
+    }
+    _url = '/'.join([url, 'auth'])
     try:
-        request = urllib3.PoolManager(cert_reqs=cert_reqs)
-        content = request.request('GET', api_url + api, headers=api_headers, timeout=_timeout)
-        decoded = json.loads(content.data.decode('utf8'))
+        requests.request('DELETE', _url, data=payload, headers=headers, verify=False, timeout=timeout)
+        return True
+    except Exception:
+        return False
+
+
+def pihole_get_info(url, sid, secure, timeout, api_endpoint) -> tuple[int, str]:
+    api_headers = {'accept': 'application/json', 'sid': sid}
+    _url = '/'.join([url, api_endpoint])
+    try:
+        response = requests.request('GET', _url, headers=api_headers, timeout=timeout)
+        decoded = response.json()
         return 0, decoded
     except Exception:
         return 2, "Problems with accessing API: Check if server is running."
@@ -65,8 +80,14 @@ def check_pihole(host, port, auth, secure, _timeout, api):
 
 def main():
     args = parse_args()
-    exitcode, url_output = check_pihole(args.host, args.port, args.auth, args.secure, args.timeout, 'dns/blocking')
-    message = ""
+
+    url = generate_url(args.host, args.port, args.secure)
+
+    sid, err = pihole_get_sid(url, args.auth, args.secure, args.timeout)
+    if sid == "":
+        gtfo(2, err)
+
+    exitcode, url_output = pihole_get_info(url, sid, args.secure, args.timeout, 'dns/blocking')
 
     # Error handling statments
     if exitcode == 2:
@@ -74,18 +95,26 @@ def main():
     if "error" in url_output:
         gtfo(2, "Connection Failed: " + url_output["error"]["message"])
     if url_output["blocking"] != "enabled":
-        gtfo(1, "Pi-hole blocking is currently disabled")
+        blocking_exitcode = 1
+        if args.critical:
+            blocking_exitcode = 2
+        gtfo(blocking_exitcode, "Pi-hole blocking is currently disabled")
 
-    # Fetch Pi-hole Statistics
-    exitcode, status_results = check_pihole(args.host, args.port, args.auth, args.secure, args.timeout, 'stats/summary')
-    if exitcode == 2:
-        gtfo(2, url_output)
+    if args.no_stats:
+        message = ' '.join(["Pi-hole is", url_output["blocking"]])
+    else:
+        # Fetch Pi-hole Statistics
+        exitcode, status_results = pihole_get_info(url, sid, args.secure, args.timeout, 'stats/summary')
+        if exitcode == 2:
+            gtfo(2, url_output)
+        message = "Pi-hole is " + url_output["blocking"] + \
+            ": queries today - " + str(status_results["queries"]["total"]) + \
+            ", domains blocked: " + str(status_results["queries"]["blocked"]) + \
+            ", percentage blocked: " + str(status_results["queries"]["percent_blocked"]) + \
+            "|queries=" + str(status_results["queries"]["total"]) + " blocked=" + \
+            str(status_results["queries"]["blocked"]) + " clients=" + str(status_results["clients"]["total"])
 
-    message = message + "Pi-hole is " + url_output["blocking"] + ": queries today - " + \
-        str(status_results["queries"]["total"]) + ", domains blocked: " + str(status_results["queries"]["blocked"]) + \
-        ", percentage blocked: " + str(status_results["queries"]["percent_blocked"]) + \
-        "|queries=" + str(status_results["queries"]["total"]) + " blocked=" + \
-        str(status_results["queries"]["blocked"]) + " clients=" + str(status_results["clients"]["total"])
+    pihole_logout(url, sid, args.secure, args.timeout)
 
     # Exit with results
     gtfo(exitcode, message)
