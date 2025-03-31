@@ -53,6 +53,7 @@ def pihole_get_sid(url, auth, secure, timeout) -> tuple[str, str]:
         print(e)
         return "", "Problems with accessing API: Check if server is running."
 
+
 def pihole_logout(url, sid, secure, timeout) -> bool:
     payload = {}
     headers = {
@@ -60,9 +61,9 @@ def pihole_logout(url, sid, secure, timeout) -> bool:
     }
     _url = '/'.join([url, 'auth'])
     try:
-        response = requests.request('DELETE', _url, data=payload, headers=headers, verify=False, timeout=timeout)
+        requests.request('DELETE', _url, data=payload, headers=headers, verify=False, timeout=timeout)
         return True
-    except Exception as e:
+    except Exception:
         return False
 
 
@@ -106,8 +107,9 @@ def main():
         exitcode, status_results = pihole_get_info(url, sid, args.secure, args.timeout, 'stats/summary')
         if exitcode == 2:
             gtfo(2, url_output)
-        message = "Pi-hole is " + url_output["blocking"] + ": queries today - " + \
-            str(status_results["queries"]["total"]) + ", domains blocked: " + str(status_results["queries"]["blocked"]) + \
+        message = "Pi-hole is " + url_output["blocking"] + \
+            ": queries today - " + str(status_results["queries"]["total"]) + \
+            ", domains blocked: " + str(status_results["queries"]["blocked"]) + \
             ", percentage blocked: " + str(status_results["queries"]["percent_blocked"]) + \
             "|queries=" + str(status_results["queries"]["total"]) + " blocked=" + \
             str(status_results["queries"]["blocked"]) + " clients=" + str(status_results["clients"]["total"])
