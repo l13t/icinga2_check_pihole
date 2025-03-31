@@ -41,9 +41,17 @@ def gtfo(exitcode, message=''):
 def check_pihole(host, port, auth, secure, _timeout, api):
     api_url = 'http' + ('s' if secure else '') + '://' + host + ('' if port == 80 else ":"+str(port)) + '/api/'
     cert_reqs = 'CERT_NONE' if secure else ''
-    request = urllib3.PoolManager(cert_reqs=cert_reqs)
-    content = request.request('POST', api_url + 'auth', body=json.dumps({"password": auth}), timeout=_timeout)
-    sid = json.loads(content.data.decode('utf8'))['session']['sid']
+    try:
+        request = urllib3.PoolManager(cert_reqs=cert_reqs)
+        content = request.request('POST', api_url + 'auth', body=json.dumps({"password": auth}), timeout=_timeout)
+        valid = json.loads(content.data.decode('utf8'))['session']['valid']
+        if not valid:
+            return 2, "Problems with accessing API: Check if provided password is correct."
+
+        sid = json.loads(content.data.decode('utf8'))['session']['sid']
+
+    except Exception:
+        return 2, "Problems with accessing API: Check if server is running."
 
     api_headers = {'accept': 'application/json', 'sid': sid}
     try:
