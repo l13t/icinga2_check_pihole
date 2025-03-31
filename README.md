@@ -1,9 +1,18 @@
 # icinga2_check_pihole
 
-Icinga2/Nagios plugin to check Pi-hole status.
+## About
+
+Icinga2/Nagios plugin to check Pi-hole status. At the moment script supports only version 6.0.0 and above.
+
+## Dependencies
+
+- Python 3.9+
+- Requests library
+
+## How to use
 
 ```bash
-usage: check_pihole.py [-h] -H HOST [-P PORT] -A AUTH [-S] [-C] [-W] [-t TIMEOUT]
+usage: check_pihole.py [-h] -H HOST [-P PORT] -A AUTH [-S] [-C] [-n] [-t TIMEOUT]
 
 Check Pi-hole (version >=6.0.0) status
 
@@ -13,9 +22,8 @@ options:
   -P, --port PORT       Port number for Pi-Hole web UI
   -A, --auth AUTH       API Auth Key
   -S, --secure          Use ssl for connection
-  -C, --status_critical
-                        Forces CRITICAL when Pi-hole is disabled
-  -W, --status_warning  Forces WARNING when Pi-hole is disabled
+  -C, --critical        Forces CRITICAL when Pi-hole is disabled
+  -n, --no-stats        Disable stats in output
   -t, --timeout TIMEOUT
                         Timeout for request. Default 10 seconds
 ```
